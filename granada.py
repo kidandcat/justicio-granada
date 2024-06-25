@@ -45,27 +45,32 @@ while True:
         break
 
     for entry in soup.select('.tablatr td b a'):
-        title = entry.text
-        ref = entry.get("href")
-        linkpage = urlopen(HOST+ref)
-        linkhtml = linkpage.read()
-        linksoup = BeautifulSoup(linkhtml, "html.parser")
+        try:
+            title = entry.text[0:150]
+            if title == "":
+                continue
+            ref = entry.get("href")
+            linkpage = urlopen(HOST+ref)
+            linkhtml = linkpage.read()
+            linksoup = BeautifulSoup(linkhtml, "html.parser")
 
-        # Tipo:
-        group = ""
-        for td in linksoup.find_all('td'):
-            if "Tipo: " in td.text:
-                tipo = td.text.replace("Tipo: ", "")
-                tipo = tipo.split(" ")[0]
-                group = tipo
-                break
-        
-        content = linksoup.select_one("#mibody").text
-        sql = "INSERT INTO normativa (ciudad, date, titulo, grupo, subgrupo, url, content) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-        val = (CITY, DATE, title, group, '', HOST+ref, content)
-        mycursor.execute(sql, val)
-        print("Processed", title)
-        processed += 1
+            # Tipo:
+            group = ""
+            for td in linksoup.find_all('td'):
+                if "Tipo: " in td.text:
+                    tipo = td.text.replace("Tipo: ", "")
+                    tipo = tipo.split(" ")[0]
+                    group = tipo
+                    break
+            
+            content = linksoup.select_one("#mibody").text
+            sql = "INSERT INTO normativa (ciudad, date, titulo, grupo, subgrupo, url, content) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            val = (CITY, DATE, title, group, '', HOST+ref, content)
+            mycursor.execute(sql, val)
+            print("Processed", title)
+            processed += 1
+        except Exception as e:
+            print("Error when processing", entry.text, ":", e)
     pagenum += 1
 
 # Commit changes
